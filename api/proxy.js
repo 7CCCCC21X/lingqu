@@ -5,18 +5,26 @@ export default async function handler(req, res) {
     const response = await fetch(url);
     const data = await response.json();
 
-    if (Array.isArray(data) && data.length >= 2) {
-      const sold_count_1 = data[0]?.sold_count;
-      const sold_count_2 = data[1]?.sold_count;
+    if (Array.isArray(data) && data.length >= 4) {
+      const sold_counts = data.slice(0, 4).map((item, index) => ({
+        [`sold_count_${index + 1}`]: item?.sold_count ?? null
+      }));
 
-      if (typeof sold_count_1 !== 'undefined' && typeof sold_count_2 !== 'undefined') {
-        res.setHeader('Access-Control-Allow-Origin', '*');
-        res.status(200).json({ sold_count_1, sold_count_2 });
+      const hasAllCounts = sold_counts.every(item =>
+        Object.values(item)[0] !== null
+      );
+
+      res.setHeader('Access-Control-Allow-Origin', '*');
+
+      if (hasAllCounts) {
+        // 合并成一个对象返回
+        const result = Object.assign({}, ...sold_counts);
+        res.status(200).json(result);
       } else {
         res.status(404).json({ error: '部分 sold_count 不存在' });
       }
     } else {
-      res.status(404).json({ error: '数据不足两个元素' });
+      res.status(404).json({ error: '数据不足四个元素' });
     }
   } catch (err) {
     res.status(500).json({ error: '查询失败', detail: err.message });
