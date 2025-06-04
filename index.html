@@ -1,19 +1,66 @@
-export default async function handler(req, res) {
-  const url = 'https://litangdingzhen.me/get_data';
-
-  try {
-    const response = await fetch(url);
-    const data = await response.json();
-
-    // 只返回第一项（包含 re_coin 和 sold_count）
-    const first = Array.isArray(data) && data.length > 0 ? data[0] : null;
-
-    if (first && typeof first.sold_count !== 'undefined') {
-      res.setHeader('Access-Control-Allow-Origin', '*');
-      res.status(200).json({ sold_count: first.sold_count });
-    } else {
-      res.status(404).json({ error: '未找到 sold_count' });
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <title>领取人数查询</title>
+  <title>Sold Count 查询</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; background: #f9f9f9; }
+    h1 { color: #333; }
+    button { padding: 8px 16px; margin-top: 10px; }
+    #result { margin-top: 20px; font-weight: bold; }
+    body {
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 100px;
     }
-  } catch (err) {
-    res.status(500).json({ error: '查询失败', detail: err.message });
-  }
+    h1 {
+      font-size: 24px;
+      color: #333;
+    }
+    #result {
+      margin-top: 20px;
+      font-size: 20px;
+      font-weight: bold;
+      color: #0078D7;
+    }
+  </style>
+</head>
+<body>
+  <h1>领取人数查询工具</h1>
+  <button onclick="check()">查询领取人数</button>
+  <div id="result">等待查询…</div>
+  <h1>当前 Sold Count</h1>
+  <div id="result">加载中...</div>
+
+  <script>
+    async function check() {
+      document.getElementById('result').innerText = '查询中...';
+      try {
+        const res = await fetch('/api/proxy');
+        const json = await res.json();
+        const count = json[0]?.sold_count;
+        if (count && !isNaN(count)) {
+          document.getElementById('result').innerText = `当前领取人数：${count}`;
+    fetch('/api/proxy')
+      .then(res => res.json())
+      .then(data => {
+        const resultEl = document.getElementById('result');
+        if (data && typeof data.sold_count !== 'undefined') {
+          resultEl.textContent = `Sold Count：${data.sold_count}`;
+        } else {
+          document.getElementById('result').innerText = '⚠️ 无法获取领取人数';
+          resultEl.textContent = '未获取到数据';
+        }
+      } catch (e) {
+        document.getElementById('result').innerText = '⚠️ 查询失败：' + e.message;
+      }
+    }
+      })
+      .catch(() => {
+        document.getElementById('result').textContent = '请求失败';
+      });
+  </script>
+</body>
+</html>
