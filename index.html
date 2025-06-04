@@ -1,46 +1,19 @@
-<!DOCTYPE html>
-<html lang="zh">
-<head>
-  <meta charset="UTF-8">
-  <title>Sold Count 查询</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      margin-top: 100px;
-    }
-    h1 {
-      font-size: 24px;
-      color: #333;
-    }
-    #result {
-      margin-top: 20px;
-      font-size: 20px;
-      font-weight: bold;
-      color: #0078D7;
-    }
-  </style>
-</head>
-<body>
-  <h1>当前 Sold Count</h1>
-  <div id="result">加载中...</div>
+export default async function handler(req, res) {
+  const url = 'https://litangdingzhen.me/get_data';
 
-  <script>
-    fetch('/api/proxy')
-      .then(res => res.json())
-      .then(data => {
-        const resultEl = document.getElementById('result');
-        if (data && typeof data.sold_count !== 'undefined') {
-          resultEl.textContent = `Sold Count：${data.sold_count}`;
-        } else {
-          resultEl.textContent = '未获取到数据';
-        }
-      })
-      .catch(() => {
-        document.getElementById('result').textContent = '请求失败';
-      });
-  </script>
-</body>
-</html>
+  try {
+    const response = await fetch(url);
+    const data = await response.json();
+
+    // 只返回第一项（包含 re_coin 和 sold_count）
+    const first = Array.isArray(data) && data.length > 0 ? data[0] : null;
+
+    if (first && typeof first.sold_count !== 'undefined') {
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.status(200).json({ sold_count: first.sold_count });
+    } else {
+      res.status(404).json({ error: '未找到 sold_count' });
+    }
+  } catch (err) {
+    res.status(500).json({ error: '查询失败', detail: err.message });
+  }
